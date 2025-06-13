@@ -18,7 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def _handle_push_webhook(hass, webhook_id: str, request) -> web.Response:
-    """Push-webhook för EVLinkHA – uppdaterar vehicle-coordinator."""
+    """Push webhook for EVLinkHA – updates the vehicle coordinator."""
     try:
         data = await request.json()
         _LOGGER.debug("Push payload: %s", data)
@@ -26,21 +26,21 @@ async def _handle_push_webhook(hass, webhook_id: str, request) -> web.Response:
         coord = hass.data.get(DOMAIN, {}).get(f"{webhook_id}_vehicle")
         old = coord.data or {}
 
-        # Starta med en kopia av gamla värden
+        # Start with a copy of the old values
         merged = old.copy()
 
-        # Gå igenom incoming och slå ihop
+        # Merge incoming data
         for key, val in data.items():
-            # Om värdet är ett dict och vi redan har ett dict under samma nyckel → mergerar nivå 2
+            # If the value is a dict and we already have a dict under the same key → merge level 2
             if isinstance(val, dict) and isinstance(old.get(key), dict):
                 nested = old.get(key, {}).copy()
                 nested.update(val)
                 merged[key] = nested
             else:
-                # Annars ersätt eller lägg till
+                # Otherwise replace or add
                 merged[key] = val
 
-        # Skicka in den sammanslagna datan
+        # Submit the merged data
         coord.async_set_updated_data(merged)
 
         return web.Response(status=200, text="OK")
@@ -59,17 +59,17 @@ async def async_setup_entry(hass, entry) -> bool:
     """
     _LOGGER.debug("Starting async_setup_entry for %s", entry.entry_id)
     try:
-        # Läs in konfig
+        # Read configuration
         api_key    = entry.data[CONF_API_KEY]
         env        = entry.data.get(CONF_ENVIRONMENT, "prod")
         vehicle_id = entry.data[CONF_VEHICLE_ID]
         base_url   = ENVIRONMENTS[env]
         _LOGGER.debug("Config: api_key=%s, env=%s, vehicle_id=%s", api_key, env, vehicle_id)
 
-        # Initiera API-klient
+        # Initialize API client
         client = EVLinkHAClient(hass, api_key, base_url, vehicle_id)
 
-        # 1) User info coordinator (uppdatera var 5:e minut)
+        # 1) User info coordinator (refresh every 5 minutes)
         user_coord = DataUpdateCoordinator(
             hass, _LOGGER,
             name=f"{DOMAIN} user info",
@@ -78,7 +78,7 @@ async def async_setup_entry(hass, entry) -> bool:
         )
         await user_coord.async_config_entry_first_refresh()
 
-        # 2) Vehicle status coordinator (uppdatera var minut)
+        # 2) Vehicle status coordinator (refresh every minute)
         vehicle_coord = DataUpdateCoordinator(
             hass, _LOGGER,
             name=f"{DOMAIN} vehicle status",
@@ -87,11 +87,11 @@ async def async_setup_entry(hass, entry) -> bool:
         )
         await vehicle_coord.async_config_entry_first_refresh()
 
-        # Spara coordinators
+        # Store coordinators
         hass.data.setdefault(DOMAIN, {})[entry.entry_id] = user_coord
         hass.data[DOMAIN][f"{entry.entry_id}_vehicle"] = vehicle_coord
 
-        # 3) Registrera charging-service
+        # 3) Register charging service
         schema = vol.Schema({vol.Required("action"): vol.In(["START", "STOP"])})
         async def _handle_charging(call):
             action = call.data["action"]
@@ -113,7 +113,7 @@ async def async_setup_entry(hass, entry) -> bool:
         )
         _LOGGER.debug("Service set_charging registered")
 
-        # 4) Registrera webhook under /api/webhook/{entry_id}
+        # 4) Register webhook under /api/webhook/{entry_id}
         webhook_id = entry.entry_id
         async_register(
             hass,
@@ -124,7 +124,7 @@ async def async_setup_entry(hass, entry) -> bool:
         )
         _LOGGER.debug("Webhook registered with id=%s", webhook_id)
 
-        # 5) Forwarda till sensor-plattformen
+        # 5) Forward to the sensor platform
         await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
         _LOGGER.debug("Forwarded entry to sensor platform")
 
@@ -136,17 +136,17 @@ async def async_setup_entry(hass, entry) -> bool:
 
 
 async def async_unload_entry(hass, entry) -> bool:
-    """Unload EVLinkHA: deregister webhook & service, ta bort coordinators."""
+    """Unload EVLinkHA: deregister webhook & service, remove coordinators."""
     _LOGGER.debug("Unloading EVLinkHA entry %s", entry.entry_id)
-    # Avregistrera sensorer
+    # Unregister sensors
     unload_ok = await hass.config_entries.async_unload_platforms(entry, ["sensor"])
 
-    # Avregistrera service och webhook
+    # Unregister service and webhook
     hass.services.async_remove(DOMAIN, "set_charging")
     async_unregister(hass, entry.entry_id)
     _LOGGER.debug("Service and webhook unregistered")
 
-    # Rensa data
+    # Clear data
     hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     hass.data.get(DOMAIN, {}).pop(f"{entry.entry_id}_vehicle", None)
 

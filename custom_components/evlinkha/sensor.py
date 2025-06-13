@@ -12,11 +12,11 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     entities = []
 
-    # Skapa sensorer för userinfo
+    # Create sensors for userinfo
     for field, (label, unit) in USER_FIELDS.items():
         entities.append(EVLinkHASensor(user_coordinator, entry, field, label, unit))
 
-    # Skapa sensorer för vehicle status, om coordinator finns
+    # Create sensors for vehicle status if coordinator exists
     if vehicle_coordinator:
         for field, (label, unit) in VEHICLE_FIELDS.items():
             entities.append(
@@ -25,7 +25,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     
     entities.append(
         EVLinkHALocation(
-            vehicle_coordinator,  # basera på status‐coordinatorn
+            vehicle_coordinator,  # based on the status coordinator
             entry
         )
     )
@@ -34,7 +34,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
 
 class EVLinkHASensor(CoordinatorEntity, SensorEntity):
-    """Sensor för användarinformation."""
+    """Sensor for user information."""
 
     def __init__(self, coordinator, entry, field, name, unit):
         super().__init__(coordinator)
@@ -72,12 +72,12 @@ class EVLinkHASensor(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        # Fallback till entry_id om data saknas
+        # Fallback to entry_id if data is missing
         return f"{DOMAIN}-{self._entry.entry_id}-{self._field}"
 
 
 class EVLinkHAVehicleSensor(CoordinatorEntity, SensorEntity):
-    """Sensor för fordonsstatus."""
+    """Sensor for vehicle status."""
 
     def __init__(self, coordinator, entry, field, name, unit):
         super().__init__(coordinator)
@@ -101,7 +101,7 @@ class EVLinkHAVehicleSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def state(self):
-        # Hämta värdet ur din nested JSON
+        # Retrieve the value from the nested JSON
         data = self.coordinator.data or {}
         parts = self._field.split(".")
         val = data
@@ -111,11 +111,11 @@ class EVLinkHAVehicleSensor(CoordinatorEntity, SensorEntity):
                 break
             val = val.get(p)
 
-        # Speciell hantering för null-värden på chargeRate och chargeTimeRemaining
+        # Special handling for null values on chargeRate and chargeTimeRemaining
         if self._field in ("chargeState.chargeRate", "chargeState.chargeTimeRemaining"):
             return "--" if val is None else val
 
-        # Övriga sensorer: returnera som vanligt (None → Unknown)
+        # Other sensors: return as usual (None → Unknown)
         return val
 
     @property
@@ -128,11 +128,11 @@ class EVLinkHAVehicleSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        # Enhetligt id utan beroende av svarsdatan
+        # Consistent id independent of response data
         return f"{DOMAIN}-{self._entry.entry_id}-vehicle-{self._field}"
 
 class EVLinkHALocation(CoordinatorEntity, SensorEntity):
-    """Template‐sensor för fordonsposition med lat/lon‐attribut."""
+    """Template sensor for vehicle position with lat/lon attributes."""
 
     def __init__(self, coordinator, entry):
         super().__init__(coordinator)
@@ -153,14 +153,14 @@ class EVLinkHALocation(CoordinatorEntity, SensorEntity):
 
     @property
     def state(self) -> str:
-        """Använd vehicleName som state (eller valfritt fält)."""
+        """Use vehicleName as the state (or any field)."""
         data = self.coordinator.data or {}
-        # vehicleName kommer från /status/:vehicle_id
+        # vehicleName comes from /status/:vehicle_id
         return data.get("vehicleName") or "Unknown"
 
     @property
     def extra_state_attributes(self) -> dict:
-        """Exponera latitude/longitude som attribut."""
+        """Expose latitude/longitude as attributes."""
         data = self.coordinator.data or {}
         loc = data.get("location", {})
         return {

@@ -46,7 +46,7 @@ ICONS = {
 
 USER_FIELDS = {
     "tier": ("Tier", None),
-    "email": ("E-post", None),
+    "email": ("Email", None),
     "name": ("Name", None),
     "role": ("Role", None),
     "sms_credits": ("SMS Credits", "count"),

@@ -1,10 +1,10 @@
-# Ignorera allt ...
+# Ignore everything ...
 *
 
-# ... men “unta” kataloger så att vi kan whitelist’a en specifik mapp:
+# ... but "unignore" directories so that we can whitelist a specific folder:
 !*/
 
-# Whitelist evlinkha-komponenten
+# Whitelist the evlinkha component
 !custom_components/evlinkha/
 !custom_components/evlinkha/**
 

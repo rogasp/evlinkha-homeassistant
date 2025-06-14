@@ -15,7 +15,8 @@ class EvlinkhaConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema({
                 vol.Required(CONF_API_KEY): str,
-                vol.Required(CONF_ENVIRONMENT, default="prod"): vol.In(["prod", "sandbox"]),
+                # vol.Required(CONF_ENVIRONMENT, default="prod"): vol.In(["prod", "sandbox"]),
+                vol.Required(CONF_ENVIRONMENT, default="prod"): vol.In(["prod"]),
                 vol.Required(CONF_VEHICLE_ID): str,
             }),
             errors=errors,

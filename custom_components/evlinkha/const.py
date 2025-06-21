@@ -8,7 +8,7 @@ CONF_VEHICLE_ID  = "vehicle_id"
 WEBHOOK_ID = f"{DOMAIN}_push_webhook"
 
 ENVIRONMENTS = {
-    "prod":    "https://evlinkha.se",
+    "prod":    "https://api.evlinkha.se",
     "sandbox": "http://161.97.70.223:8000"
 }
 

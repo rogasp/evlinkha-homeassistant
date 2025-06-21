@@ -1,11 +1,19 @@
 {
   "domain": "evlinkha",
   "name": "EVLinkHA",
-  "version": "0.0.1",
+  "after_dependencies": [
+        "http"
+  ],
+  "codeowners": [
+        "@rogasp"
+  ],
   "config_flow": true,
-  "platforms": ["sensor"],
+  "dependencies": [],
   "documentation": "https://github.com/rogasp/evlink-backend",
+  "import_executor": true,
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/rogasp/evlink-backend/issues",
   "requirements": [],
-  "codeowners": ["@rogasp"],
-  "iot_class": "cloud_polling"
+  "version": "0.0.1"
 }

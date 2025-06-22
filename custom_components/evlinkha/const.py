@@ -4,6 +4,7 @@ DOMAIN           = "evlinkha"
 CONF_API_KEY     = "api_key"
 CONF_ENVIRONMENT = "environment"
 CONF_VEHICLE_ID  = "vehicle_id"
+CONF_UPDATE_INTERVAL = "update_interval"
 
 WEBHOOK_ID = f"{DOMAIN}_push_webhook"
 

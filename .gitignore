@@ -8,6 +8,7 @@
 !custom_components/evlinkha/
 !custom_components/evlinkha/**
 !.github/**
+!hacs.json
 
 # Ignore Python cache
 __pycache__/

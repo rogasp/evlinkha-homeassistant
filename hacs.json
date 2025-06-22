@@ -1,0 +1,10 @@
+{
+  "name": "EVLinkHA",
+  "content_in_root": false,
+  "domains": ["evlinkha"],
+  "country": "all",
+  "homeassistant": "2025.5.0",
+  "iot_class": "cloud_polling",
+  "render_readme": true,
+  "filename": "custom_components/evlinkha/__init__.py"
+}

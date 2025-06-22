@@ -9,11 +9,11 @@
   ],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/rogasp/evlink-backend",
+  "documentation": "https://github.com/rogasp/evlinkha-homeassistant",
   "import_executor": true,
   "integration_type": "hub",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/rogasp/evlink-backend/issues",
+  "issue_tracker": "https://github.com/rogasp/evlinkha-homeassistant/issues",
   "requirements": [],
   "version": "0.0.1"
 }

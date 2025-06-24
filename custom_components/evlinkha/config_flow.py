@@ -75,8 +75,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         entry = self._async_current_entries()[0] if self._async_current_entries() else None
         data = entry.data if entry else {}
 
-        if user_input is not None:
-            return self.async_create_entry(title="EVLinkHA", data=user_input)
+        if user_input is not None and entry:
+            self.hass.config_entries.async_update_entry(entry, data=user_input)
+            _LOGGER.info("Config entry updated via reconfigure.")
+            return self.async_abort(reason="reconfigured")
 
         return self.async_show_form(
             step_id="reconfigure",
@@ -88,13 +90,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     def async_get_options_flow(config_entry):
-        return EVLinkHAOptionsFlowHandler(config_entry)
+        return EVLinkHAOptionsFlowHandler()
 
 class EVLinkHAOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options for EVLinkHA."""
-
-    def __init__(self, config_entry):
-        self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         if user_input is not None:
@@ -108,3 +107,4 @@ class EVLinkHAOptionsFlowHandler(config_entries.OptionsFlow):
                 ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60))
             }),
         )
+

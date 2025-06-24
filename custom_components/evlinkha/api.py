@@ -2,6 +2,7 @@
 EVLinkHA API client for fetching user and vehicle information and 
 handling rate‐limit (HTTP 429) with persistent notifications.
 """
+from datetime import datetime
 import aiohttp
 import logging
 
@@ -47,6 +48,7 @@ class EVLinkHAClient:
         Fetch full status for the configured vehicle.
         Raises UpdateFailed on rate‐limit (429) to skip this cycle.
         """
+        _LOGGER.info("Polling vehicle status at %s", datetime.now())
         url = f"{self.base_url}/api/ha/status/{self.vehicle_id}"
         headers = {"Authorization": f"Bearer {self.api_key}"}
         _LOGGER.debug(f"[EVLinkHAClient] GET vehicle status: {url}")
@@ -61,7 +63,6 @@ class EVLinkHAClient:
 
                     if resp.status == 429:
                         _LOGGER.warning(f"[EVLinkHAClient] Rate limited (429) on {url}")
-                        # Persistent notification in UI
                         self.hass.async_create_task(
                             self.hass.services.async_call(
                                 "persistent_notification",
@@ -75,20 +76,20 @@ class EVLinkHAClient:
                                 },
                             )
                         )
-                        # Skip this update cycle without clearing old data
                         raise UpdateFailed("429 rate limited by EVLinkHA")
                     
-                    # Bad request (e.g. already charging)
+                    # Bad request (e.g. invalid vehicle_id, backend error, etc)
                     if resp.status == 400:
-                        _LOGGER.warning(f"[EVLinkHAClient] Charging rejected (400): {text}")
+                        text = await resp.text()
+                        _LOGGER.warning(f"[EVLinkHAClient] Vehicle status fetch rejected (400): {text}")
                         self.hass.async_create_task(
                             self.hass.services.async_call(
                                 "persistent_notification",
                                 "create",
                                 {
-                                    "title": "EVLinkHA Charging Error",
+                                    "title": "EVLinkHA Vehicle Status Error",
                                     "message": (
-                                        f"Could not {action} charging for vehicle {self.vehicle_id}. "
+                                        f"Vehicle status request rejected for vehicle {self.vehicle_id}. "
                                         f"Error: {text}"
                                     ),
                                 },
@@ -97,15 +98,16 @@ class EVLinkHAClient:
                         return None
 
                     # Other errors
-                    _LOGGER.error(f"[EVLinkHAClient] Charging failed HTTP {resp.status}: {text}")
+                    text = await resp.text()
+                    _LOGGER.error(f"[EVLinkHAClient] Vehicle status fetch failed HTTP {resp.status}: {text}")
                     self.hass.async_create_task(
                         self.hass.services.async_call(
                             "persistent_notification",
                             "create",
                             {
-                                "title": "EVLinkHA Charging Error",
+                                "title": "EVLinkHA Vehicle Status Error",
                                 "message": (
-                                    f"Unexpected error {resp.status} when trying to {action} charging."
+                                    f"Unexpected error {resp.status} when trying to fetch vehicle status."
                                 ),
                             },
                         )
@@ -113,19 +115,19 @@ class EVLinkHAClient:
                     return None
 
         except Exception as err:
-            _LOGGER.exception(f"[EVLinkHAClient] Exception setting charging: {err}")
-            # Notify user of exception
+            _LOGGER.exception(f"[EVLinkHAClient] Exception fetching vehicle status: {err}")
             self.hass.async_create_task(
                 self.hass.services.async_call(
                     "persistent_notification",
                     "create",
                     {
-                        "title": "EVLinkHA Charging Exception",
+                        "title": "EVLinkHA Vehicle Status Exception",
                         "message": str(err),
                     },
                 )
             )
             return None
+
 
     async def async_set_charging(self, action: str) -> dict | None:
         url = f"{self.base_url}/api/ha/charging/{self.vehicle_id}"

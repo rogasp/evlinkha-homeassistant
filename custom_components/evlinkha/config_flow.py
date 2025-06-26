@@ -1,7 +1,8 @@
 from homeassistant import config_entries
 import voluptuous as vol
 import logging
-from .const import DOMAIN, CONF_API_KEY, CONF_VEHICLE_ID, CONF_UPDATE_INTERVAL
+from .const import DOMAIN, CONF_API_KEY, CONF_VEHICLE_ID, CONF_UPDATE_INTERVAL, CONF_ENVIRONMENT, ENVIRONMENTS
+
 from .api import EVLinkHAClient
 
 DEFAULT_UPDATE_INTERVAL = 6
@@ -16,11 +17,13 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
         if user_input is not None:
             api_key = user_input[CONF_API_KEY]
-            _LOGGER.debug(f"[ConfigFlow] User entered API key: {api_key}")
+            environment = user_input[CONF_ENVIRONMENT]
+            base_url = ENVIRONMENTS[environment]
+            _LOGGER.debug(f"[ConfigFlow] User entered API key: {api_key}, environment: {environment}")
 
             # Validera API-key mot backend!
             try:
-                client = EVLinkHAClient(self.hass, api_key, "https://api.evlinkha.se", "dummy")
+                client = EVLinkHAClient(self.hass, api_key, base_url, "dummy")
                 _LOGGER.debug("[ConfigFlow] Created EVLinkHAClient for API key validation")
                 userinfo = await client.async_get_userinfo()
                 _LOGGER.debug(f"[ConfigFlow] Result from async_get_userinfo: {userinfo}")
@@ -30,18 +33,18 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors["api_key"] = "invalid_api_key"
                 else:
                     _LOGGER.info("[ConfigFlow] API key validated successfully, proceeding to vehicle_id step")
-                    # Spara API-key temporärt för nästa steg
                     self.context["api_key"] = api_key
+                    self.context["environment"] = environment    # <-- NY
                     return await self.async_step_vehicle()
             except Exception as e:
                 _LOGGER.exception(f"[ConfigFlow] Exception during API key validation: {e}")
                 errors["base"] = "cannot_connect"
 
-        # Första steget: Endast API-key
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema({
                 vol.Required(CONF_API_KEY): str,
+                vol.Required(CONF_ENVIRONMENT, default="prod"): vol.In(["prod", "sandbox"]),
             }),
             errors=errors
         )
@@ -51,18 +54,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             vehicle_id = user_input[CONF_VEHICLE_ID]
             api_key = self.context["api_key"]
+            environment = self.context["environment"]      # <-- NY
             _LOGGER.debug(f"[ConfigFlow] User entered vehicle_id: {vehicle_id}")
 
-            # Här kan du (om du vill) validera vehicle_id via API också!
-            # Annars skapa entry direkt:
             entry_data = {
                 CONF_API_KEY: api_key,
+                CONF_ENVIRONMENT: environment,              # <-- NY
                 CONF_VEHICLE_ID: vehicle_id,
             }
-            _LOGGER.info("[ConfigFlow] Creating config entry with API key and vehicle_id")
+            _LOGGER.info("[ConfigFlow] Creating config entry with API key, environment and vehicle_id")
             return self.async_create_entry(title="EVLinkHA", data=entry_data)
 
-        # Andra steget: vehicle_id
         return self.async_show_form(
             step_id="vehicle",
             data_schema=vol.Schema({
@@ -84,6 +86,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="reconfigure",
             data_schema=vol.Schema({
                 vol.Required(CONF_API_KEY, default=data.get(CONF_API_KEY, "")): str,
+                vol.Required(CONF_ENVIRONMENT, default=data.get(CONF_ENVIRONMENT, "prod")): vol.In(["prod", "sandbox"]), # <-- NY
                 vol.Required(CONF_VEHICLE_ID, default=data.get(CONF_VEHICLE_ID, "")): str,
             }),
         )
@@ -107,4 +110,3 @@ class EVLinkHAOptionsFlowHandler(config_entries.OptionsFlow):
                 ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60))
             }),
         )
-

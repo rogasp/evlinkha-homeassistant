@@ -27,31 +27,32 @@ async def _handle_push_webhook(hass, webhook_id: str, request) -> web.Response:
         coord = hass.data.get(DOMAIN, {}).get(f"{webhook_id}_vehicle")
         old = coord.data or {}
 
+        # Ta endast vehicle-datan!
+        vehicle_update = data.get("vehicle", {})
+        if not vehicle_update:
+            _LOGGER.warning("No 'vehicle' field in webhook payload, ignoring.")
+            return web.Response(status=400, text="Missing vehicle data")
+        
         # Start with a copy of the old values
         merged = old.copy()
-
-        # Merge incoming data
-        for key, val in data.items():
-            # If the value is a dict and we already have a dict under the same key → merge level 2
+        for key, val in vehicle_update.items():
             if isinstance(val, dict) and isinstance(old.get(key), dict):
                 nested = old.get(key, {}).copy()
                 nested.update(val)
                 merged[key] = nested
             else:
-                # Otherwise replace or add
                 merged[key] = val
 
         # Submit the merged data
         coord.async_set_updated_data(merged)
+        _LOGGER.debug("Manually updated evlinkha vehicle status data")
+
 
         return web.Response(status=200, text="OK")
 
     except Exception:
         _LOGGER.exception("Error in push webhook handler")
         return web.Response(status=500, text="Error")
-
-
-# ... (allt före är oförändrat!)
 
 async def async_setup_entry(hass, entry) -> bool:
     """

@@ -4,6 +4,8 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import DOMAIN, ICONS, USER_FIELDS, VEHICLE_FIELDS
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up EVLinkHA sensors."""
@@ -12,23 +14,48 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     entities = []
 
-    # Create sensors for userinfo
+    # Hämta capabilities från senaste vehicle-status
+    vehicle_data = vehicle_coordinator.data or {}
+    capabilities = vehicle_data.get("capabilities", {})
+    _LOGGER.debug("[EVLinkHA] Vehicle capabilities: %s", capabilities)
+
+    def is_field_capable(field):
+        cap_key = field.split(".")[0]
+        cap = capabilities.get(cap_key, {})
+        is_cap = cap.get("isCapable", True)  # Default True för bakåtkompabilitet
+        _LOGGER.debug("[EVLinkHA] Field '%s' capability '%s': %s", field, cap_key, is_cap)
+        return is_cap
+
+    # Userinfo sensors
     for field, (label, unit) in USER_FIELDS.items():
         entities.append(EVLinkHASensor(user_coordinator, entry, field, label, unit))
 
-    # Create sensors for vehicle status if coordinator exists
+    # Vehicle status sensors, nu med filtrering!
     if vehicle_coordinator:
         for field, (label, unit) in VEHICLE_FIELDS.items():
-            entities.append(
-                EVLinkHAVehicleSensor(vehicle_coordinator, entry, field, label, unit)
-            )
-    
+            if is_field_capable(field):
+                entities.append(
+                    EVLinkHAVehicleSensor(vehicle_coordinator, entry, field, label, unit)
+                )
+                _LOGGER.warning(
+                    "[EVLinkHA] Sensor created: %s, field: %s",
+                    f"{DOMAIN}-{entry.entry_id}-vehicle-{field}",
+                    field,
+                )
+            else:
+                _LOGGER.warning(
+                    "[EVLinkHA] Skipping sensor for field '%s' since capability '%s' isCapable: False",
+                    field, field.split(".")[0]
+                )
+
     entities.append(
         EVLinkHALocation(
             vehicle_coordinator,  # based on the status coordinator
             entry
         )
     )
+
+    entities.append(EVLinkHAWebhookIdSensor(user_coordinator, entry))
 
     async_add_entities(entities)
 
@@ -52,7 +79,6 @@ class EVLinkHASensor(CoordinatorEntity, SensorEntity):
             "model": "EVLinkHA Integration",
         }
 
-
     @property
     def name(self):
         return f"EVLinkHA {self._name}"
@@ -74,7 +100,6 @@ class EVLinkHASensor(CoordinatorEntity, SensorEntity):
     def unique_id(self):
         # Fallback to entry_id if data is missing
         return f"{DOMAIN}-{self._entry.entry_id}-{self._field}"
-
 
 class EVLinkHAVehicleSensor(CoordinatorEntity, SensorEntity):
     """Sensor for vehicle status."""
@@ -171,3 +196,20 @@ class EVLinkHALocation(CoordinatorEntity, SensorEntity):
     @property
     def unique_id(self) -> str:
         return f"{DOMAIN}-{self._entry.entry_id}-location"
+
+class EVLinkHAWebhookIdSensor(CoordinatorEntity, SensorEntity):
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator)
+        self._entry = entry
+
+    @property
+    def name(self):
+        return "EVLinkHA Webhook ID"
+
+    @property
+    def state(self):
+        return self._entry.entry_id
+
+    @property
+    def unique_id(self):
+        return f"{DOMAIN}-{self._entry.entry_id}-webhook-id"

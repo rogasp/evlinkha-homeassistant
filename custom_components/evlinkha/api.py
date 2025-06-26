@@ -32,7 +32,7 @@ class EVLinkHAClient:
         _LOGGER.debug(f"[EVLinkHAClient] GET userinfo: {url}")
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers, timeout=10) as resp:
+                async with session.get(url, headers=headers, timeout=15) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         _LOGGER.debug(f"[EVLinkHAClient] Userinfo: {data}")
@@ -55,7 +55,7 @@ class EVLinkHAClient:
 
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers, timeout=10) as resp:
+                async with session.get(url, headers=headers, timeout=15) as resp:
                     if resp.status == 200:
                         data = await resp.json()
                         _LOGGER.debug(f"[EVLinkHAClient] Vehicle status: {data}")
@@ -139,7 +139,7 @@ class EVLinkHAClient:
         _LOGGER.debug(f"[EVLinkHAClient] POST charging: {url} payload={payload}")
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, headers=headers, timeout=10) as resp:
+                async with session.post(url, json=payload, headers=headers, timeout=15) as resp:
                     text = await resp.text()
                     if resp.status in (200, 201):
                         data = await resp.json()

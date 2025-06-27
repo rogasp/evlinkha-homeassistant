@@ -20,6 +20,7 @@ ICONS = {
     "name": "mdi:account",
     "role": "mdi:shield-account",
     "sms_credits": "mdi:message-text",
+    "webhookId": "mdi:account",
     "chargeState.batteryLevel": "mdi:battery",
     "chargeState.range": "mdi:map-marker-distance",
     "chargeState.isCharging": "mdi:flash",
@@ -52,6 +53,10 @@ USER_FIELDS = {
     "name": ("Name", None),
     "role": ("Role", None),
     "sms_credits": ("SMS Credits", "count"),
+}
+
+WEBHOOK_FIELDS = {
+    "webhookId": ("Webhook ID", None),
 }
 
 VEHICLE_FIELDS = {

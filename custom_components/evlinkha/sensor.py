@@ -3,7 +3,7 @@
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from .const import DOMAIN, ICONS, USER_FIELDS, VEHICLE_FIELDS
+from .const import DOMAIN, ICONS, USER_FIELDS, VEHICLE_FIELDS, WEBHOOK_FIELDS
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +55,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         )
     )
 
-    entities.append(EVLinkHAWebhookIdSensor(user_coordinator, entry))
+    for field, (label, unit) in WEBHOOK_FIELDS.items():
+        entities.append(EVLinkHAWebhookIdSensor(user_coordinator, entry, field, label, unit))
 
     async_add_entities(entities)
 
@@ -198,18 +199,40 @@ class EVLinkHALocation(CoordinatorEntity, SensorEntity):
         return f"{DOMAIN}-{self._entry.entry_id}-location"
 
 class EVLinkHAWebhookIdSensor(CoordinatorEntity, SensorEntity):
-    def __init__(self, coordinator, entry):
+    def __init__(self, coordinator, entry, field, name, unit):
         super().__init__(coordinator)
         self._entry = entry
+        self._field = field
+        self._name = name
+        self._unit = unit
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return {
+            "identifiers": {(DOMAIN, self._entry.entry_id)},
+            "name": "EVLinkHA",
+            "manufacturer": "Roger Aspelin",
+            "model": "EVLinkHA Integration",
+        }
 
     @property
     def name(self):
-        return "EVLinkHA Webhook ID"
+        return f"EVLinkHA {self._name}"
 
     @property
     def state(self):
+        # Returnera entry_id som är unikt för denna integration/instans.
         return self._entry.entry_id
 
     @property
+    def unit_of_measurement(self):
+        return self._unit
+
+    @property
+    def icon(self):
+        return ICONS.get(self._field)
+
+    @property
     def unique_id(self):
-        return f"{DOMAIN}-{self._entry.entry_id}-webhook-id"
+        # Fallback to entry_id if data is missing
+        return f"{DOMAIN}-{self._entry.entry_id}-{self._field}"

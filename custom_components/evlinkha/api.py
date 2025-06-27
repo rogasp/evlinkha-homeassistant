@@ -128,7 +128,6 @@ class EVLinkHAClient:
             )
             return None
 
-
     async def async_set_charging(self, action: str) -> dict | None:
         url = f"{self.base_url}/api/ha/charging/{self.vehicle_id}"
         headers = {
@@ -151,3 +150,25 @@ class EVLinkHAClient:
         except Exception as err:
             _LOGGER.exception(f"[EVLinkHAClient] Exception setting charging: {err}")
         return None
+
+    async def async_get_vehicles(self) -> list[dict]:
+        """
+        Fetch all vehicles linked to the current user.
+        Returns a list of dicts (id, displayName, model, etc), or empty list.
+        """
+        url = f"{self.base_url}/api/ha/vehicles"
+        headers = {"Authorization": f"Bearer {self.api_key}"}
+        _LOGGER.debug(f"[EVLinkHAClient] GET vehicles: {url}")
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, headers=headers, timeout=10) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        _LOGGER.debug(f"[EVLinkHAClient] Vehicles: {data}")
+                        # Expects: [{"id": "...", "displayName": "...", ...}, ...]
+                        return data if isinstance(data, list) else []
+                    _LOGGER.error(f"[EVLinkHAClient] Failed to get vehicles: HTTP {resp.status}")
+        except Exception as err:
+            _LOGGER.exception(f"[EVLinkHAClient] Exception fetching vehicles: {err}")
+        return []
+

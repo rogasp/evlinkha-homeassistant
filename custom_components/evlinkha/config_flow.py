@@ -51,27 +51,56 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_vehicle(self, user_input=None):
         errors = {}
+        api_key = self.context["api_key"]
+        environment = self.context["environment"]
+        base_url = ENVIRONMENTS[environment]
+        client = EVLinkHAClient(self.hass, api_key, base_url, "dummy")
+        vehicles = await client.async_get_vehicles()
+        # Bygg lista över fordon: label → id
+        choices = {}
+        for v in vehicles:
+            id = v.get("vehicleId")
+            if not id:
+                _LOGGER.warning(f"[ConfigFlow] Vehicle without ID found: {v}")
+                continue
+
+            vin = v.get("information", {}).get("vin")
+            if not vin:
+                continue
+            name = (
+                v.get("information", {}).get("displayName")
+                or v.get("vehicleName")
+                or (
+                    f"{v.get('information', {}).get('brand', 'Unknown')} "
+                    f"{v.get('information', {}).get('model', '')}".strip()
+                )
+            )
+            label = id
+            choices[label] = f"{name} ({vin})"
+
+        _LOGGER.warning(f"[ConfigFlow] Available vehicles: {choices}")
+
+        if not choices:
+            errors["base"] = "no_vehicles"
+        
         if user_input is not None:
             vehicle_id = user_input[CONF_VEHICLE_ID]
-            api_key = self.context["api_key"]
-            environment = self.context["environment"]      # <-- NY
-            _LOGGER.debug(f"[ConfigFlow] User entered vehicle_id: {vehicle_id}")
-
             entry_data = {
                 CONF_API_KEY: api_key,
-                CONF_ENVIRONMENT: environment,              # <-- NY
+                CONF_ENVIRONMENT: environment,
                 CONF_VEHICLE_ID: vehicle_id,
             }
             _LOGGER.info("[ConfigFlow] Creating config entry with API key, environment and vehicle_id")
             return self.async_create_entry(title="EVLinkHA", data=entry_data)
-
+        
         return self.async_show_form(
             step_id="vehicle",
             data_schema=vol.Schema({
-                vol.Required(CONF_VEHICLE_ID): str,
+                vol.Required(CONF_VEHICLE_ID): vol.In(choices)
             }),
             errors=errors
         )
+
 
     async def async_step_reconfigure(self, user_input=None):
         entry = self._async_current_entries()[0] if self._async_current_entries() else None

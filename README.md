@@ -3,7 +3,7 @@
 [![hacs badge](https://img.shields.io/badge/HACS-Custom-blue.svg?style=flat-square)](https://hacs.xyz/docs/faq/custom_repositories)
 ![Home Assistant minimum version](https://img.shields.io/badge/HA%20min-2025.5-blue?style=flat-square)
 [![MIT License](https://img.shields.io/github/license/rogasp/evlinkha-homeassistant?style=flat-square)](LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/rogasp/evlinkha-homeassistant?style=flat-square)](https://github.com/rogasp/evlinkha-homeassistant/releases)
+[![GitHub release](https://img.shields.io/github/v/release/rogasp/evlinkha-homeassistant?include_prereleases&style=flat-square)](https://github.com/rogasp/evlinkha-homeassistant/releases)
 [![Issues](https://img.shields.io/github/issues/rogasp/evlinkha-homeassistant?style=flat-square)](https://github.com/rogasp/evlinkha-homeassistant/issues)
 
 ---

@@ -10,7 +10,7 @@ DEFAULT_UPDATE_INTERVAL = 6
 WEBHOOK_ID = f"{DOMAIN}_push_webhook"
 
 ENVIRONMENTS = {
-    "prod":    "https://api.evlinkha.se",
+    "prod":    "https://api.evlinkha.cloud",
     "sandbox": "http://161.97.70.223:8000"
 }
 

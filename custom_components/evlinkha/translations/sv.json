@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Anslut till EVLinkHA",
-        "description": "Ange din API-nyckel, välj miljö och fordon.",
+        "description": "Ange din API-nyckel och välj miljö.",
         "data": {
           "api_key": "API-nyckel",
           "environment": "Miljö",

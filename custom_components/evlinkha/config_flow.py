@@ -64,19 +64,25 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.warning(f"[ConfigFlow] Vehicle without ID found: {v}")
                 continue
 
-            vin = v.get("information", {}).get("vin")
-            if not vin:
+            name = v.get("vehicleName")
+            if not name:
+                _LOGGER.warning(f"[ConfigFlow] Vehicle without name found: {v}")
                 continue
-            name = (
-                v.get("information", {}).get("displayName")
-                or v.get("vehicleName")
-                or (
-                    f"{v.get('information', {}).get('brand', 'Unknown')} "
-                    f"{v.get('information', {}).get('model', '')}".strip()
-                )
-            )
+
+            #vin = v.get("information", {}).get("vin")
+            #if not vin:
+            #    continue
+            #name = (
+            #    v.get("information", {}).get("displayName")
+            #    or v.get("vehicleName")
+            #    or (
+            #        f"{v.get('information', {}).get('brand', 'Unknown')} "
+            #        f"{v.get('information', {}).get('model', '')}".strip()
+            #    )
+            #)
             label = id
-            choices[label] = f"{name} ({vin})"
+            choices[label] = f"{name}"
+            #choices[label] = f"{name} ({vin})"
 
         _LOGGER.warning(f"[ConfigFlow] Available vehicles: {choices}")
 

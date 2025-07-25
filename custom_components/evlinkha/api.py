@@ -27,8 +27,8 @@ class EVLinkHAClient:
         self.vehicle_id = vehicle_id
 
     async def async_get_userinfo(self) -> dict | None:
-        url = f"{self.base_url}/api/ha/me"
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        url = f"{self.base_url}/api/v1/ha/me"
+        headers = {"X-API-Key": f"{self.api_key}"}
         _LOGGER.debug(f"[EVLinkHAClient] GET userinfo: {url}")
         try:
             async with aiohttp.ClientSession() as session:
@@ -49,8 +49,8 @@ class EVLinkHAClient:
         Raises UpdateFailed on rate‐limit (429) to skip this cycle.
         """
         _LOGGER.info("Polling vehicle status at %s", datetime.now())
-        url = f"{self.base_url}/api/ha/status/{self.vehicle_id}"
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        url = f"{self.base_url}/api/v1/ha/status/{self.vehicle_id}"
+        headers = {"X-API-Key": f"{self.api_key}"}
         _LOGGER.debug(f"[EVLinkHAClient] GET vehicle status: {url}")
 
         try:
@@ -129,9 +129,9 @@ class EVLinkHAClient:
             return None
 
     async def async_set_charging(self, action: str) -> dict | None:
-        url = f"{self.base_url}/api/ha/charging/{self.vehicle_id}"
+        url = f"{self.base_url}/api/v1/ha/charging/{self.vehicle_id}"
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "X-API-Key": f"{self.api_key}",
             "Content-Type": "application/json",
         }
         payload = {"action": action.upper()}
@@ -156,8 +156,8 @@ class EVLinkHAClient:
         Fetch all vehicles linked to the current user.
         Returns a list of dicts (id, displayName, model, etc), or empty list.
         """
-        url = f"{self.base_url}/api/ha/vehicles"
-        headers = {"Authorization": f"Bearer {self.api_key}"}
+        url = f"{self.base_url}/api/v1/ha/vehicles"
+        headers = {"X-API-Key": f"{self.api_key}"}
         _LOGGER.debug(f"[EVLinkHAClient] GET vehicles: {url}")
         try:
             async with aiohttp.ClientSession() as session:
